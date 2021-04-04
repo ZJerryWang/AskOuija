@@ -5,6 +5,9 @@ import firestore from '@react-native-firebase/firestore';
 import ParticipatingSpirit from '../participating-spirit';
 
 const QuestionAsker = props => {
+//This is how we define a refernce variable
+  const counter=useRef(0);
+//state variable
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState({ id: -1, text: '' });
   const [customQuestionText, setCustomQuestionText] = useState('');
@@ -16,6 +19,24 @@ const QuestionAsker = props => {
   };
 
   //write the askQuestion function here
+  const askQuestion = () => {
+    let questionText = '';
+    if (customQuestionText.length > 0) {
+      questionText = customQuestionText;
+    } else if (selectedQuestion.text.length > 0) {
+      questionText = selectedQuestion.text;
+    }
+
+    if (questionText.length > 0) {
+      firestore().collection("ao-games").doc(props.GameID).update({
+        question: questionText,
+      })
+      .catch(err => {
+        let friendlyError = { friendly: "Something has gone horribly wrong.", technical: err.toString() };
+        setError(() => { throw friendlyError });
+      });
+    }
+  };
 
   //update the customQuestionText if the player writes a custom question
   const doCustomQuestion = text => {
@@ -26,6 +47,52 @@ const QuestionAsker = props => {
   };
 
   //write the useEffect here
+  useEffect(() => {
+    //get a list of 3 randomly selected questions
+    counter.current=0;
+    if ((props.GameData !== undefined) && (props.GameData.questionAsker.uid === props.auth.uid) && (props.GameData.question === "") && (props.genra !='')) {
+      setSelectedQuestion({ id: -1, text: '' });
+      setCustomQuestionText('');
+      const getQuestions = async() => {
+        let someQuestions = [];
+        while ((someQuestions.length < 3) && (counter.current<150)) {
+          let alreadyPicked = false;
+          let key = firestore().collection("ao-questions").doc().id;
+          let potentialQuestion = "";
+          console.log(counter.current)
+          let dbQuestion = await firestore().collection("ao-questions").where(firebase.firestore.FieldPath.documentId(), ">=", key).limit(1).get();
+          counter.current +=1;
+
+          if (dbQuestion.size > 0) {
+            dbQuestion.forEach(q => {
+              if(q.data().genra===props.genra) {
+                potentialQuestion = q.data().questionText;
+              }
+            });
+          } else {
+            dbQuestion = await firestore().collection("ao-questions").where(firebase.firestore.FieldPath.documentId(), "<", key).limit(1).get();
+            counter.current +=1;
+            dbQuestion.forEach(q => {
+              if(q.data().genra===props.genra){
+                potentialQuestion = q.data().questionText;
+              }
+            });
+          }
+          someQuestions.forEach(question => {
+            if (question === potentialQuestion) {
+              alreadyPicked = true;
+            }
+          });
+          if (!alreadyPicked) {
+            someQuestions.push(potentialQuestion);
+          }
+        }
+        setQuestions(someQuestions);
+        console.log(counter.current)
+      }
+      getQuestions();
+    }
+  }, [props.GameData]);
 
 
   //show the question list if no question has been asked
@@ -35,6 +102,9 @@ const QuestionAsker = props => {
         <View style={props.styles.aoGameInnerContainer}>
           <View style={props.styles.aoLobbyContainer}>
             <View style={props.styles.aoLobbyInnerContainer}>
+              <Text style={props.styles.aoHeadline}>
+                {"Mortal, which genre shall the Spirits answer?"}
+              </Text>
               <Text style={props.styles.aoHeadline}>
                 {"Mortal, which query shall the Spirits answer?"}
               </Text>

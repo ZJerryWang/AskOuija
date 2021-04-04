@@ -10,6 +10,22 @@ const AnsweringSpirit = props => {
   const [error, setError] = useState('');
 
   //write the addLetter function here
+  const addLetter = () => {
+    return firestore().collection("ao-games").doc(props.GameID).update({
+      answer: props.GameData.answer + selectedLetter,
+    })
+    .then(response => {
+      let newAnsweringSpirit = getRandomPlayer();
+      while ((newAnsweringSpirit.uid === props.GameData.answeringSpirit.uid) || (newAnsweringSpirit.uid === props.GameData.questionAsker.uid)) {
+        newAnsweringSpirit = getRandomPlayer();
+      }
+      updateAnsweringSpirit(newAnsweringSpirit);
+    })
+    .catch(err => {
+      let friendlyError = { friendly: "Something has gone horribly wrong.", technical: err.toString() };
+      setError(() => { throw friendlyError });
+    });
+  };
 
   //select the letter if it's different from the already selected letter. If it's the same, deselect the letter
   const toggleLetter = letter => {
@@ -21,13 +37,39 @@ const AnsweringSpirit = props => {
   };
 
   //write the finalizeAnswer function here
-
+  const finalizeAnswer = () => {
+    let newQuestionAsker = getRandomPlayer();
+    let newAnsweringSpirit = getRandomPlayer();
+    while (newQuestionAsker.uid === newAnsweringSpirit.uid) {
+      newQuestionAsker = getRandomPlayer();
+    }
+    return firestore().collection("ao-games").doc(props.GameID).update({
+      questionAsker: newQuestionAsker,
+      answeringSpirit: newAnsweringSpirit,
+      question: '',
+      answer: '',
+    })
+    .catch(err => {
+      let friendlyError = { friendly: "Something has gone terribly wrong.", technical: err.toString() };
+      setError(() => { throw friendlyError });
+    });
+  };
+  
   //get a random player from the array of players
   const getRandomPlayer = () => {
     return props.GameData.players[Math.floor(Math.random() * ((props.GameData.players.length - 1) - 0 + 1) + 0)];
   };
 
   //write the updateAnsweringSpirit function here
+  const updateAnsweringSpirit = newAnsweringSpirit => {
+    return firestore().collection("ao-games").doc(props.GameID).update({
+      answeringSpirit: newAnsweringSpirit,
+    })
+    .catch(err => {
+      let friendlyError = { friendly: "Something has gone terribly wrong.", technical: err.toString() };
+      setError(() => { throw friendlyError });
+    });
+  };
 
   //render a waiting screen for the answering spirit while the question asker selects their question
   if ((props.GameData !== undefined) && (props.GameData.status === "playing") && (props.GameData.question === "" )) {

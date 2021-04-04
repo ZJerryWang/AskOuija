@@ -12,6 +12,22 @@ const Greeting = props => {
   const [error, setError] = useState('');
 
   //write the createGame function here
+  const createGame = () => {
+    generateGameCode()
+      .then(response => {
+        if (!response.hasError) {
+          setGameDocID(response);
+          setCurrentStep('get-name');
+        } else {
+          let friendlyError = { friendly: "Something has gone terribly wrong.", technical: response.value !== undefined ? response.value.toString() : '' };
+          setError(() => { throw friendlyError });
+        }
+      })
+      .catch (err => {
+        let friendlyError = { friendly: "Something has gone terribly wrong.", technical: err.toString() };
+        setError(() => { throw friendlyError });
+      });
+  };
 
   //write the generateGameCode function here
   const generateGameCode = () => {
@@ -39,6 +55,7 @@ const Greeting = props => {
       });
   };
 
+
   //write the saveGame function here
   const saveGame = newGameCode => {
     return firestore().collection("ao-games").add({
@@ -58,7 +75,21 @@ const Greeting = props => {
   };
 
   //write the updateName function here
-
+  const updateName = () => {
+    if (userName.length > 0) {
+      return auth().currentUser.updateProfile({
+        displayName: userName,
+      })
+      .then((r) => {
+        props.joinGame(gameDocID);
+      })
+      .catch(err => {
+        let friendlyError = { friendly: "Something has gone terribly wrong.", technical: err.toString() };
+        setError(() => { throw friendlyError });
+      });
+    }
+  };
+  
   //write the joinGame function here
   const joinGame = () => {
     if (gameCode.length === 4) {
@@ -82,7 +113,7 @@ const Greeting = props => {
       });
     }
   };
-  
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={props.styles.aoGameContainer}>

@@ -7,11 +7,48 @@ const Lobby = props => {
   const [error, setError] = useState('');
 
   //write the startGame function here
+  const startGame = () => {
+    if ((props.GameData !== undefined) && (props.GameData.owner === props.auth.uid) && (props.GameData.players.length > 2)) {
+
+
+        let questionAsker = { displayName: '', uid: '', avatar: '' };
+        let answeringSpirit = { displayName: '', uid: '', avatar: '' };
+        while (questionAsker.uid === answeringSpirit.uid) {
+          questionAsker = getRandomPlayer(props.GameData.players);
+          answeringSpirit = getRandomPlayer(props.GameData.players);
+        }
+        return setRoles(questionAsker, answeringSpirit)
+          .then(response => {
+            if (response.hasError) {
+              let friendlyError = { friendly: "Something has gone terribly wrong.", technical: response.value.toString() };
+              setError(() => { throw friendlyError });
+            }
+          });
+    }
+  };
 
   //write the getRandomPlayer function here
+  const getRandomPlayer = players => {
+    return players[Math.floor(Math.random() * players.length)];
+  };
 
   //write the setRoles function here
-
+const setRoles = (questionAsker, answeringSpirit) => {
+    return firestore().collection("ao-games").doc(props.GameID).update({
+      status: "playing",
+      questionAsker: questionAsker,
+      answeringSpirit: answeringSpirit,
+      question: '',
+      answer: '',
+    })
+    .then(() => {
+      return { hasError: false, value: null };
+    })
+    .catch(err => {
+      return { hasError: true, value: err };
+    });
+  };
+  
   //if props.GameData is undefined, the game may have been deleted from the database. Take the player back to the greeting screen
   if (props.GameData === undefined) {
     props.changeScreen('greeting');
