@@ -12,6 +12,8 @@ const QuestionAsker = props => {
   const [selectedQuestion, setSelectedQuestion] = useState({ id: -1, text: '' });
   const [customQuestionText, setCustomQuestionText] = useState('');
   const [error, setError] = useState('');
+  const [genre,setGenre]=useState('');
+  const [selectedGenre, setSelectedGenre]=useState({text:''})
 
   //save the player's question choice
   const selectQuestion = (index, question) => {
@@ -50,7 +52,7 @@ const QuestionAsker = props => {
   useEffect(() => {
     //get a list of 3 randomly selected questions
     counter.current=0;
-    if ((props.GameData !== undefined) && (props.GameData.questionAsker.uid === props.auth.uid) && (props.GameData.question === "") && (props.genra !='')) {
+    if ((props.GameData !== undefined) && (props.GameData.questionAsker.uid === props.auth.uid) && (props.GameData.question === "") && (props.genre !='')) {
       setSelectedQuestion({ id: -1, text: '' });
       setCustomQuestionText('');
       const getQuestions = async() => {
@@ -65,7 +67,7 @@ const QuestionAsker = props => {
 
           if (dbQuestion.size > 0) {
             dbQuestion.forEach(q => {
-              if(q.data().genra===props.genra) {
+              if(q.data().genre===props.genre) {
                 potentialQuestion = q.data().questionText;
               }
             });
@@ -73,13 +75,13 @@ const QuestionAsker = props => {
             dbQuestion = await firestore().collection("ao-questions").where(firebase.firestore.FieldPath.documentId(), "<", key).limit(1).get();
             counter.current +=1;
             dbQuestion.forEach(q => {
-              if(q.data().genra===props.genra){
+              if(q.data().genre===props.genre){
                 potentialQuestion = q.data().questionText;
               }
             });
           }
           someQuestions.forEach(question => {
-            if (question === potentialQuestion) {
+            if ((question === potentialQuestion) || (potentialQuestion==="")) {
               alreadyPicked = true;
             }
           });
@@ -89,10 +91,47 @@ const QuestionAsker = props => {
         }
         setQuestions(someQuestions);
         console.log(counter.current)
+        console.log(someQuestions)
       }
       getQuestions();
     }
-  }, [props.GameData]);
+  }, [props.GameData,selectedGenre]);
+
+
+  //show the question genre if no question has been asked
+  if ((selectedGenre === "") ){
+    return (
+      <View style={props.styles.aoGameContainer}>
+        <View style={props.styles.aoGameInnerContainer}>
+          <View style={props.styles.aoLobbyContainer}>
+            <View style={props.styles.aoLobbyInnerContainer}>
+              <Text style={props.styles.aoHeadline}>
+                {"Mortal, which genre shall the Spirits answer?"}
+              </Text>
+              <View style={{display: "flex", flexDirection: "column", marginTop: 36, alignItems: "center", justifyContent: "flex-start", width: "100%"}}>
+                  <TouchableOpacity style={props.styles.aoQuestionRow} onPress={() => setSelectedGenre("only-with-friends")}>
+                    <Text style={props.styles.aoQuestionText}>
+                    only-with-friends
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={props.styles.aoQuestionRow}  onPress={() => setSelectedGenre("family-friendly")}>
+                    <Text style={props.styles.aoQuestionText}>
+                    family-friendly
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={ props.styles.aoQuestionRow}  onPress={() => setSelectedGenre("office-friendly")}>
+                    <Text style={props.styles.aoQuestionText}>
+                    office-friendly
+                    </Text>
+                  </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
 
 
   //show the question list if no question has been asked
@@ -102,9 +141,6 @@ const QuestionAsker = props => {
         <View style={props.styles.aoGameInnerContainer}>
           <View style={props.styles.aoLobbyContainer}>
             <View style={props.styles.aoLobbyInnerContainer}>
-              <Text style={props.styles.aoHeadline}>
-                {"Mortal, which genre shall the Spirits answer?"}
-              </Text>
               <Text style={props.styles.aoHeadline}>
                 {"Mortal, which query shall the Spirits answer?"}
               </Text>
