@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import firebase from '@react-native-firebase/app';
 import firestore from '@react-native-firebase/firestore';
 import ParticipatingSpirit from '../participating-spirit';
 
 const QuestionAsker = props => {
-//This is how we define a refernce variable
+  //This is how we define a refernce variable
   const counter=useRef(0);
-//state variable
+  //state variable
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState({ id: -1, text: '' });
   const [customQuestionText, setCustomQuestionText] = useState('');
   const [error, setError] = useState('');
-  const [genre,setGenre]=useState('');
-  const [selectedGenre, setSelectedGenre]=useState({text:''})
+  const [selectedGenre, setSelectedGenre] = useState('');
 
   //save the player's question choice
   const selectQuestion = (index, question) => {
